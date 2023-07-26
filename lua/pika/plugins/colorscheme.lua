@@ -8,4 +8,8 @@ return {
       require("onedarkpro").load()
     end,
   },
+  { "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000
+  },
 }

@@ -32,7 +32,7 @@ opt.backup = false
 opt.writebackup = false
 opt.swapfile = false
 
-opt.textwidth = 80
+opt.textwidth = 119
 
 opt.expandtab = true -- Use spaces instead of tabs
 opt.shiftwidth = 2 -- Size of an indent
@@ -71,3 +71,6 @@ opt.inccommand = "nosplit" -- Incremental replace with preview
 
 opt.grepformat = "%f:%l:%c:%m"
 opt.grepprg = "rg --vimgrep"
+
+opt.undodir = vim.fn.stdpath('config') .. '/undo'
+vim.cmd 'set undofile'

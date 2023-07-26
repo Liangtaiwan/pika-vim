@@ -21,7 +21,7 @@ local function nvim_cmp_config()
       end
     end
 
-    vim_item.abbr = trim(vim_item.abbr, 80)
+    vim_item.abbr = trim(vim_item.abbr, 119)
     return lspkind_format(entry, vim_item)
   end
 
