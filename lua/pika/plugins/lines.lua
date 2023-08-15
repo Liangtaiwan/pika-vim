@@ -10,7 +10,7 @@ end
 
 local function lualine_config()
   require("lualine").setup({
-    options = { theme = "onedark" },
+    options = { theme = "catppuccin" },
     sections = {
       lualine_b = {
         "diagnostics",
