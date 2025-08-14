@@ -1,20 +1,136 @@
-local treesitter_langs = {
-  "c", "cpp", "python", "rust", "lua", "vim", "vimdoc",
-  "javascript", "html", "css", "scss",
-  "markdown", "markdown_inline",
-}
+local function lsp_on_attach(client, bufnr)
+  require("lsp_signature").on_attach({}, bufnr)
+
+  if vim.lsp.formatexpr then
+    vim.api.nvim_set_option_value("formatexpr", "v:lua.vim.lsp.formatexpr", {
+      buf = bufnr,
+    })
+  end
+  if vim.lsp.tagfunc then
+    vim.api.nvim_set_option_value("tagfunc", "v:lua.vim.lsp.tagfunc", {
+      buf = bufnr,
+    })
+  end
+
+  local function map(mode, lhs, rhs)
+    vim.keymap.set(mode, lhs, rhs, { buffer = true, silent = true })
+  end
+
+  map("n", "<Localleader>D", vim.lsp.buf.declaration)
+  map("n", "K", vim.lsp.buf.hover)
+  map("n", "<Localleader>k", vim.lsp.buf.signature_help)
+  map("n", "<Localleader>e", vim.diagnostic.open_float)
+  map("n", "<Localleader>R", vim.lsp.buf.rename)
+  map("n", "[g", function()
+    vim.diagnostic.jump({ count = -1, float = true })
+  end)
+  map("n", "]g", function()
+    vim.diagnostic.jump({ count = 1, float = true })
+  end)
+  map("n", "<Localleader>a", vim.lsp.buf.code_action)
+
+  map("n", "<Localleader>d", vim.lsp.buf.definition)
+  map("n", "<Localleader>i", vim.lsp.buf.implementation)
+  map("n", "<Localleader>t", vim.lsp.buf.type_definition)
+  map("n", "<Localleader>r", vim.lsp.buf.references)
+
+  -- Set some keybinds conditional on server capabilities
+  if client.server_capabilities.document_formatting then
+    map("n", "<Localleader>F", vim.lsp.buf.formatting)
+  end
+  if client.server_capabilities.document_range_formatting then
+    map("v", "<Localleader>F", vim.lsp.buf.range_formatting)
+  end
+
+  -- Set autocommands conditional on server_capabilities
+  if client.server_capabilities.document_highlight then
+    vim.api.nvim_set_hl(0, "LspReferenceRead", { link = "Search" })
+    vim.api.nvim_set_hl(0, "LspReferenceText", { link = "Search" })
+    vim.api.nvim_set_hl(0, "LspReferenceWrite", { link = "Search" })
+    local group_id = vim.api.nvim_create_augroup("lsp_document_highlight", {})
+    vim.api.nvim_create_autocmd("CursorHold", {
+      group = group_id,
+      buffer = bufnr,
+      callback = vim.lsp.buf.document_highlight,
+    })
+    vim.api.nvim_create_autocmd("CursorMoved", {
+      group = group_id,
+      buffer = bufnr,
+      callback = vim.lsp.buf.clear_references,
+    })
+  end
+end
+
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("UserLspConfig", {}),
+  callback = function(args)
+    local bufnr = args.buf
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    lsp_on_attach(client, bufnr)
+  end,
+})
+
+local function lsp_config()
+  vim.lsp.config("*", {
+    capabilities = require("cmp_nvim_lsp").default_capabilities(),
+    root_markers = { ".git" },
+  })
+
+  local runtime_path = vim.split(package.path, ";")
+  table.insert(runtime_path, "lua/?.lua")
+  table.insert(runtime_path, "lua/?/init.lua")
+
+  vim.lsp.config("lua_ls", {
+    settings = {
+      Lua = {
+        runtime = { version = "LuaJIT", path = runtime_path },
+        diagnostics = { globals = { "vim" } },
+        workspace = { library = vim.api.nvim_get_runtime_file("", true) },
+        telemetry = { enable = false },
+      },
+    },
+  })
+
+  vim.lsp.enable("clangd")
+  vim.lsp.enable("pyright")
+  vim.lsp.enable("ruff")
+  vim.lsp.enable("texlab")
+  vim.lsp.enable("lua_ls")
+  vim.lsp.enable("ts_ls")
+end
 
 return {
-  'nvim-treesitter/nvim-treesitter',
-  build = ":TSUpdate",
-  config = function ()
-    local configs = require("nvim-treesitter.configs")
-
-    configs.setup({
-      ensure_installed = treesitter_langs,
-      sync_install = false,
-      highlight = { enable = true },
-      indent = { enable = true },
-    })
-  end,
+  {
+    "ray-x/lsp_signature.nvim",
+    lazy = true,
+  },
+  {
+    "j-hui/fidget.nvim",
+    opts = {},
+    event = "LspAttach",
+  },
+  {
+    "neovim/nvim-lspconfig",
+    dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
+    },
+    config = lsp_config,
+  },
+  {
+    "simrat39/symbols-outline.nvim",
+    init = function()
+      vim.g.symbols_outline = { auto_preview = false }
+    end,
+    cmd = { "SymbolsOutline" },
+  },
+  -- Language specific packages
+  {
+    "p00f/clangd_extensions.nvim",
+    lazy = true,
+  },
+  {
+    "mrcjkb/rustaceanvim",
+    version = "^6", -- Recommended
+    lazy = false, -- This plugin is already lazy
+  },
 }

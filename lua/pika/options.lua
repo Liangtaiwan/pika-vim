@@ -72,5 +72,7 @@ opt.inccommand = "nosplit" -- Incremental replace with preview
 opt.grepformat = "%f:%l:%c:%m"
 opt.grepprg = "rg --vimgrep"
 
+opt.winborder = "rounded"
+
 opt.undodir = vim.fn.stdpath('config') .. '/undo'
 vim.cmd 'set undofile'
